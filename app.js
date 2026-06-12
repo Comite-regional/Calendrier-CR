@@ -44,21 +44,34 @@ function discKey(label) {
   if (s.includes("para")) return "paraext";
   if (s.includes("campagne")) return "campagne";
   if (s.includes("beursault")) return "beursault";
-  if (s.includes("3d")) return "3d";
+  if (s.includes("3d") || s.includes("trois")) return "3d";
   if (s.includes("nature")) return "nature";
-  if (s.includes("18") || s.includes("salle")) return "18m";
-  if (s.includes("extérieur") || s.includes("exterieur") || s.includes("tae")) return "tae";
+  if (s.includes("18") || s.includes("salle") || s.includes("indoor")) return "18m";
+  if (s.includes("extérieur") || s.includes("exterieur") || s.includes("tae") || s.includes("outdoor")) return "tae";
   if (s.includes("loisir")) return "loisir";
-  if (s.includes("jeune") || s.includes("poussin")) return "jeune";
+  if (s.includes("jeune") || s.includes("poussin") || s.includes("benjamin") || s.includes("cadet")) return "jeune";
   return "autre";
 }
 const DISC_COLOR = {
   tae:      "#f6e7a6", paraext:  "#cfe0ff", para18m: "#c9d4ea",
-  campagne: "#2a2a2a", beursault:"#444444", "3d":    "#e3cdb7",
-  nature:   "#d7ddc9", "18m":    "#f3d1ab", loisir:  "#f2c6ea",
+  campagne: "#c8a85a", beursault:"#8b7355", "3d":    "#e3cdb7",
+  nature:   "#a8c68f", "18m":    "#f3d1ab", loisir:  "#f2c6ea",
   jeune:    "#e2d5ff", autre:    "#cbd5e1",
 };
-const DISC_TEXT = { campagne:"#f2c200", beursault:"#ffffff" };
+const DISC_TEXT = { campagne:"#fff", beursault:"#fff", nature:"#fff" };
+const DISC_LABELS = {
+  tae:      "TAE – Tir Extérieur",
+  "18m":    "Tir en Salle 18m",
+  "3d":     "Tir 3D",
+  campagne: "Tir en Campagne",
+  nature:   "Tir Nature",
+  beursault:"Tir Beursault",
+  paraext:  "Para-tir extérieur",
+  para18m:  "Para-tir salle",
+  loisir:   "Loisirs",
+  jeune:    "Jeunes / Poussins",
+  autre:    "Autre",
+};
 
 // ── Chargement CSV ─────────────────────────────────────────────────────────
 async function loadCSV(url) {
@@ -129,7 +142,7 @@ function buildConcours(rows) {
     const hasGPS = lat && lon && Math.abs(lat) > 1 && Math.abs(lon) > 0.01;
 
     const uid = `${title}__${isoDate(start)||"na"}__${dept}__${idx}`.replace(/\s+/g, "_");
-    return { uid, title, disc, dept, region, city, cp, lieu, club, mail, site, mandat, etat,
+    return { uid, title, disc, discCat: discKey(disc), dept, region, city, cp, lieu, club, mail, site, mandat, etat,
              start, end, lat: hasGPS ? lat : null, lon: hasGPS ? lon : null };
   }).filter(c => {
     if (!c.start) return false;
@@ -146,6 +159,23 @@ function initMap() {
   }).addTo(map);
   markerLayer = L.layerGroup().addTo(map);
   map.setView([46.8, 2.3], 6);
+  addLegend();
+}
+
+function addLegend() {
+  const legend = L.control({ position: "bottomleft" });
+  legend.onAdd = function() {
+    const div = L.DomUtil.create("div", "map-legend");
+    div.innerHTML = Object.entries(DISC_LABELS)
+      .filter(([k]) => k !== "autre")
+      .map(([k, label]) => {
+        const bg  = DISC_COLOR[k] || "#94a3b8";
+        const brd = DISC_TEXT[k]  ? "rgba(255,255,255,.5)" : "rgba(0,0,0,.3)";
+        return `<div class="leg-row"><span class="leg-dot" style="background:${bg};border-color:${brd}"></span>${label}</div>`;
+      }).join("");
+    return div;
+  };
+  legend.addTo(map);
 }
 
 function makeIcon(disc) {
@@ -188,11 +218,12 @@ function buildPopupHTML(c) {
 // ── Filtres ────────────────────────────────────────────────────────────────
 function initFilters() {
   // Remplir selects dynamiquement
-  const discs  = [...new Set(allConcours.map(c => c.disc).filter(Boolean))].sort((a,b) => a.localeCompare(b,"fr"));
+  const cats   = [...new Set(allConcours.map(c => c.discCat).filter(Boolean))];
+  const catsSorted = Object.keys(DISC_LABELS).filter(k => cats.includes(k));
   const depts  = [...new Set(allConcours.map(c => c.dept).filter(Boolean))].sort();
   const selDisc = document.getElementById("f-disc");
   const selDept = document.getElementById("f-dept");
-  discs.forEach(d => { const o = document.createElement("option"); o.value = d; o.textContent = d; selDisc.appendChild(o); });
+  catsSorted.forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = DISC_LABELS[k] || k; selDisc.appendChild(o); });
   depts.forEach(d => { const o = document.createElement("option"); o.value = d; o.textContent = `Dpt ${d}`; selDept.appendChild(o); });
 
   const inputs = ["f-region","f-dept","f-disc","f-q"].map(id => document.getElementById(id));
@@ -236,9 +267,9 @@ function applyFilters() {
   const fv = getFilterValues();
   let list = allConcours;
 
-  if (fv.region) list = list.filter(c => c.region === fv.region);
-  if (fv.dept)   list = list.filter(c => c.dept   === fv.dept);
-  if (fv.disc)   list = list.filter(c => c.disc   === fv.disc);
+  if (fv.region) list = list.filter(c => c.region  === fv.region);
+  if (fv.dept)   list = list.filter(c => c.dept    === fv.dept);
+  if (fv.disc)   list = list.filter(c => c.discCat === fv.disc);
   if (fv.q)      list = list.filter(c => [c.title, c.disc, c.city, c.cp, c.club, c.dept].join(" ").toLowerCase().includes(fv.q));
 
   if (userLatLon) {
