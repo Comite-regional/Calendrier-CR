@@ -234,22 +234,18 @@ FIELDNAMES = [
 ]
 
 def main():
-    print(f"Récupération épreuves FFTA — filtre {REGION_CODE}, saison {SAISON}")
+    print(f"Récupération épreuves FFTA — France entière, saison {SAISON}")
 
     token    = get_token()
     epreuves = get_all_epreuves(token)
-    print(f"\nTotal récupéré : {len(epreuves)} épreuves (toute France)")
+    print(f"\nTotal récupéré : {len(epreuves)} épreuves")
 
-    # Filtre région côté client sur LigueCode
-    filtered = [e for e in epreuves if str(e.get("LigueCode") or "") == REGION_CODE]
-    print(f"Après filtre {REGION_CODE} : {len(filtered)} épreuves")
-
-    # Exclure les annulées
-    filtered = [e for e in filtered if str(e.get("EprvEtatCode") or "") != "X"]
+    # Exclure uniquement les annulées
+    filtered = [e for e in epreuves if str(e.get("EprvEtatCode") or "") != "X"]
     print(f"Après exclusion annulées : {len(filtered)} épreuves")
 
     if not filtered:
-        raise RuntimeError(f"Aucune épreuve trouvée pour {REGION_CODE}.")
+        raise RuntimeError("Aucune épreuve retournée par l'API FFTA.")
 
     rows = [epreuve_to_row(e) for e in filtered]
     rows.sort(key=lambda r: r["Date debut"])
