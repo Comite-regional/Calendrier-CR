@@ -55,7 +55,7 @@ function discKey(label) {
 }
 const DISC_COLOR = {
   tae:      "#ffe600", "18m":    "#1a56db", nature:   "#6b7c3a",
-  "3d":     "#7c4a2a", campagne: "#ffe600", beursault:"#ffffff",
+  "3d":     "#7c4a2a", campagne: "#111111", beursault:"#ffffff",
   loisir:   "#e91e8c", jeune:    "#7c3aed", run:      "#e53935",
   para18m:  "#4fc3f7", paraext:  "#ff6d00", autre:    "#94a3b8",
 };
@@ -63,7 +63,7 @@ const DISC_COLOR = {
 const DISC_BORDER = {
   tae:      "rgba(0,0,0,.5)",   "18m":    "rgba(255,255,255,.5)",
   nature:   "rgba(0,0,0,.35)",  "3d":     "rgba(0,0,0,.35)",
-  campagne: "rgba(0,0,0,.9)",   beursault:"rgba(0,0,0,.8)",
+  campagne: "#ffe600",           beursault:"rgba(0,0,0,.8)",
   loisir:   "rgba(0,0,0,.3)",   jeune:    "rgba(255,255,255,.5)",
   run:      "rgba(255,255,255,.5)", para18m:"rgba(0,0,0,.3)",
   paraext:  "rgba(255,255,255,.4)", autre:  "rgba(0,0,0,.3)",
